@@ -1,0 +1,123 @@
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline';
+        style-src 'self' 'unsafe-inline';
+        img-src 'self' data:;
+        font-src 'self';
+        frame-src 'none';
+        object-src 'none';
+        connect-src 'self';
+    ">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 300px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+        }
+        .container h1, .container h2 {
+            text-align: center;
+        }
+        .container input,
+        .container button {
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .container button {
+            background: #007BFF;
+            color: white;
+            border: none;
+        }
+        .container button:hover {
+            background: #0056b3;
+        }
+        .user-list {
+            width: 300px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .user-list ul {
+            list-style: none;
+            padding: 0;
+        }
+        .user-list ul li {
+            background: #f4f4f4;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        a {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            text-decoration: none;
+            color: #007BFF;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Login</h1>
+        <form id="loginForm">
+            <input type="text" id="username" placeholder="Enter your username" required />
+                <input type="password" id="password" placeholder="Enter your password" required />
+            <button type="button" id="loginButton">Login</button>
+        </form>
+        <p id="responseMessage"></p>
+        <a href="/signup">Don't have an account? Sign up</a>
+    </div>
+
+    <script>
+        // Add User
+        document.getElementById("loginButton").addEventListener("click", async () => {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+
+            const response = await fetch("/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: username, password: password })
+            });
+
+            const result = await response.json();
+            const messageElement = document.getElementById("responseMessage");
+
+            if (response.ok) {
+                console.log(response, "check")
+                localStorage.setItem('user', username)
+                messageElement.style.color = "green";
+                messageElement.textContent = result.message;
+                window.location.href = "/all_reviews";
+            } else {
+                messageElement.style.color = "red";
+                messageElement.textContent = result.error || "An error occurred.";
+            }
+        });
+
+    </script>
+</body>
+</html>

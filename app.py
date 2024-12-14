@@ -109,5 +109,68 @@ def get_all_reviews():
     return jsonify([dict(row) for row in reviews])  # Converts rows to dictionaries
 
 
+# Fetch a specific review by ID
+@app.route("/review/<int:review_id>", methods=["GET"])
+def get_review(review_id):
+    try:
+        review = db.fetch_all("SELECT * FROM reviews WHERE id = ?", (review_id,))
+        if review:
+            return jsonify(dict(review[0]))  # Convert the single row to a dictionary
+        else:
+            return jsonify({"error": "Review not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# Update a review
+@app.route("/edit_review/<int:review_id>", methods=["PUT"])
+def edit_review(review_id):
+    data = request.json
+    new_title = data.get("title")
+    new_review_date = data.get("review_date")
+    new_rating = data.get("rating")
+    new_review_text = data.get("review_text")
+    user_name = data.get("user_name")  # To verify user identity
+
+    if not new_title or not new_review_date or not new_rating or not new_review_text:
+        return jsonify({"error": "All fields are required"}), 400
+
+    # Verify the review belongs to the logged-in user
+    review = db.fetch_all("SELECT * FROM reviews WHERE id = ?", (review_id,))
+    if not review or review[0]["user_name"] != user_name:
+        return jsonify({"error": "Unauthorized action"}), 403
+
+    try:
+        db.execute_query(
+            """
+            UPDATE reviews
+            SET title = ?, review_date = ?, rating = ?, review_text = ?
+            WHERE id = ?
+            """,
+            (new_title, new_review_date, new_rating, new_review_text, review_id),
+        )
+        return jsonify({"message": "Review updated successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# Delete a review
+@app.route("/delete_review/<int:review_id>", methods=["DELETE"])
+def delete_review(review_id):
+    data = request.json
+    user_name = data.get("user_name")  # To verify user identity
+
+    # Verify the review belongs to the logged-in user
+    review = db.fetch_all("SELECT * FROM reviews WHERE id = ?", (review_id,))
+    if not review or review[0]["user_name"] != user_name:
+        return jsonify({"error": "Unauthorized action"}), 403
+
+    try:
+        db.execute_query("DELETE FROM reviews WHERE id = ?", (review_id,))
+        return jsonify({"message": "Review deleted successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == "__main__":
     app.run(debug=True)

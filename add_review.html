@@ -1,0 +1,197 @@
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline';
+        style-src 'self' 'unsafe-inline';
+        img-src 'self' data:;
+        font-src 'self';
+        frame-src 'none';
+        object-src 'none';
+        connect-src 'self';
+    ">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Movie Review</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            position: relative;
+        }
+
+        .top-right-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #007BFF;
+            color: #fff;
+            padding: 10px 15px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .top-right-button:hover {
+            background-color: #0056b3;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-top: 20px;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        input[type="text"], 
+        input[type="date"], 
+        input[type="number"], 
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        textarea {
+            resize: none;
+            height: 100px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #responseMessage {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Button to navigate to all reviews page -->
+        <a href="/all_reviews" class="top-right-button">View All Reviews</a>
+        <h1>Edit Movie Review</h1>
+        <form id="reviewForm">
+            <label for="review-title">Movie Title:</label>
+            <input type="text" id="review-title" placeholder="Enter movie title" />
+
+            <label for="review-date">Review Date:</label>
+            <input type="date" id="review-date" />
+
+            <label for="review-user-name">Your Name:</label>
+            <input type="text" id="review-user-name" placeholder="Enter your name" disabled />
+
+            <label for="review-rating">Rating (1-5):</label>
+            <input type="number" id="review-rating" min="1" max="5" placeholder="Enter rating between 1 and 5" />
+
+            <label for="review-text">Review:</label>
+            <textarea id="review-text" placeholder="Write your review"></textarea>
+
+            <button type="button" id="submitReviewButton">Save Changes</button>
+            <p id="responseMessage"></p>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Check if a review ID exists in localStorage
+            const reviewId = localStorage.getItem("reviewId") ? localStorage.getItem("reviewId") : null;
+
+            if (reviewId) {
+                // If reviewId is present, load the review data
+                fetchSingleReview(reviewId);
+            }
+        });
+
+        async function fetchSingleReview(reviewId) {
+            try {
+                const response = await fetch(`/review/${reviewId}`);
+                if (response.ok) {
+                    const review = await response.json();
+
+                    // Populate the form fields with the fetched review data
+                    document.getElementById("review-title").value = review.title || "";
+                    document.getElementById("review-date").value = review.review_date || "";
+                    document.getElementById("review-user-name").value = review.user_name || "";
+                    document.getElementById("review-rating").value = review.rating || "";
+                    document.getElementById("review-text").value = review.review_text || "";
+                } else {
+                    const error = await response.json();
+                    alert(`Error fetching review: ${error.error}`);
+                }
+            } catch (err) {
+                console.error("Failed to fetch the review:", err);
+                alert("Failed to fetch the review. Please try again later.");
+            }
+        }
+
+        document.getElementById("submitReviewButton").addEventListener("click", async function () {
+            const reviewId = localStorage.getItem("reviewId");
+            const title = document.getElementById("review-title").value;
+            const reviewDate = document.getElementById("review-date").value;
+            const userName = document.getElementById("review-user-name").value;
+            const rating = document.getElementById("review-rating").value;
+            const reviewText = document.getElementById("review-text").value;
+
+            const response = await fetch(`/edit_review/${reviewId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    title: title,
+                    review_date: reviewDate,
+                    user_name: userName, // Used for verification
+                    rating: parseInt(rating),
+                    review_text: reviewText,
+                }),
+            });
+
+            const result = await response.json();
+            const messageElement = document.getElementById("responseMessage");
+
+            if (response.ok) {
+                messageElement.style.color = "green";
+                messageElement.textContent = result.message;
+                localStorage.removeItem("reviewId");
+                // Redirect to all reviews page
+                window.location.href = "/all_reviews";
+            } else {
+                messageElement.style.color = "red";
+                messageElement.textContent = result.error || "An error occurred.";
+            }
+        });
+    </script>
+</body>
+</html>

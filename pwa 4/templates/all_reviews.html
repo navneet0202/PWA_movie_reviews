@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline';
+        style-src 'self' 'unsafe-inline';
+        img-src 'self' data:;
+        font-src 'self';
+        frame-src 'none';
+        object-src 'none';
+        connect-src 'self';
+    ">
+    
+    <title>All Reviews</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #007BFF;
+            padding: 10px 20px;
+            color: white;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .auth-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-name {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .logout-button {
+            background-color: #ff4d4f;
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .edit-button {
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+         .edit-button:hover {
+            background-color: #0056b3;
+        }
+
+        .logout-button:hover {
+            background-color: #cc0000;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .review {
+            border-bottom: 1px solid #ddd;
+            padding: 15px 0;
+        }
+
+        .review:last-child {
+            border-bottom: none;
+        }
+
+        .review-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #007BFF;
+        }
+
+        .review-meta {
+            font-size: 14px;
+            color: #777;
+            margin-bottom: 10px;
+        }
+
+        .review-text {
+            font-size: 16px;
+            color: #555;
+        }
+
+        .no-reviews {
+            text-align: center;
+            font-size: 18px;
+            color: #999;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 16px;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+         .login-button {
+            background-color: #0056b3;
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>All Reviews</h1>
+        <div id="authSection" class="auth-section"></div>
+    </div>
+    <div class="container">
+        <h1>All Reviews</h1>
+        <div id="reviewsContainer"></div>
+        <a id="addReviewButton" href="/add_review" class="back-button">Add Another Review</a>
+    </div>
+
+<script>
+    // Mock function to simulate user authentication
+    function getUser() {
+        return localStorage.getItem('user') || null; // Replace this with actual authentication
+    }
+
+    // Function to handle logout
+    function logoutUser() {
+        localStorage.removeItem('user'); // Clear user data
+        updateAuthSection(); // Update UI
+    }
+
+    // Function to handle authentication and update the UI
+    function updateAuthSection() {
+        const authSection = document.getElementById('authSection');
+        const addReviewButton = document.getElementById('addReviewButton');
+        const user = getUser();
+
+        if (user) {
+            authSection.innerHTML = `
+                <span class="user-name">${user}</span>
+                <button class="logout-button" onclick="logoutUser()">Logout</button>
+            `;
+             addReviewButton.onclick = (e) => {
+                e.preventDefault();
+                localStorage.removeItem("reviewId");
+                window.location.href = "/add_review"; // Allow navigation to add review
+            };
+        } else {
+            authSection.innerHTML = `<a href="/login" class="login-button">Login</a>`;
+            addReviewButton.onclick = (e) => {
+                e.preventDefault();
+                localStorage.removeItem("reviewId");
+                window.location.href = "/login"; // Redirect to login
+            };
+        }
+    }
+
+    // Fetch and display reviews
+    async function fetchReviews() {
+        const response = await fetch("/reviews");
+        const reviewsContainer = document.getElementById("reviewsContainer");
+        const currentUser = getUser();
+
+        if (response.ok) {
+            const reviews = await response.json();
+            if (reviews.length > 0) {
+                reviewsContainer.innerHTML = ""; // Clear previous content
+                reviews.forEach(review => {
+                    const reviewDiv = document.createElement("div");
+                    reviewDiv.classList.add("review");
+
+                    // Add Edit and Delete buttons only if the current user is the review author
+                    const actionButtons =
+                        review.user_name === currentUser
+                            ? `
+                                <button onclick="editReview(${review.id})" class="back-button">Edit</button>
+                                <button onclick="deleteReview(${review.id})" class="logout-button">Delete</button>
+                            `
+                            : "";
+
+                    reviewDiv.innerHTML = `
+                        <div class="review-title">${review.title}</div>
+                        <div class="review-meta">Reviewed by ${review.user_name} on ${review.review_date}</div>
+                        <div class="review-text">
+                            Rating: ${review.rating}/5<br>${review.review_text}
+                        </div>
+                        <div>${actionButtons}</div>
+                    `;
+                    reviewsContainer.appendChild(reviewDiv);
+                });
+            } else {
+                reviewsContainer.innerHTML = `<p class="no-reviews">No reviews posted yet.</p>`;
+            }
+        } else {
+            reviewsContainer.innerHTML = `<p class="no-reviews">Error loading reviews.</p>`;
+        }
+    }
+
+    // Handle review edit
+    async function editReview(reviewId) {
+        localStorage.setItem('reviewId', reviewId)
+        window.location.href = "/add_review"
+    }
+
+    // Handle review delete
+    async function deleteReview(reviewId) {
+        if (confirm("Are you sure you want to delete this review?")) {
+            const response = await fetch(`/delete_review/${reviewId}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ user_name: getUser() }),
+            });
+
+            if (response.ok) {
+                alert("Review deleted successfully!");
+                fetchReviews(); // Refresh reviews
+            } else {
+                const error = await response.json();
+                alert(`Error deleting review: ${error.error}`);
+            }
+        }
+    }
+
+    // Update authentication UI and fetch reviews on page load
+    updateAuthSection();
+    fetchReviews();
+</script>
+
+</body>
+</html>
